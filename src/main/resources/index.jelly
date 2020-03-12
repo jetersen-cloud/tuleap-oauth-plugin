@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<div>
+    Authentication plugin using <a href="https://tuleap.org">Tuleap</a> OAuth.
+</div>
