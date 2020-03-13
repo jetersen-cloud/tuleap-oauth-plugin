@@ -8,8 +8,11 @@ on:
 
 jobs:
   tests-with-coverage:
-    name: Tests with coverage
-    runs-on: ubuntu-18.04
+    strategy:
+      matrix:
+        os: ["windows-2019", "ubuntu-18.04"]
+    name: Tests (${{ matrix.os }}) with coverage
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
