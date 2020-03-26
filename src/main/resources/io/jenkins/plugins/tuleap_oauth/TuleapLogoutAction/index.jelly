@@ -1,0 +1,12 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout">
+    <l:layout norefresh="true">
+        <l:main-panel>
+            <j:choose>
+                <p> ${%jenkinsLoggedOut}</p>
+                <p>${%loggedOutOf} <a href="${it.tuleapUrl}">${it.tuleapUrl}</a>.</p>
+                <p>${%bye}</p>
+            </j:choose>
+        </l:main-panel>
+    </l:layout>
+</j:jelly>

@@ -1,0 +1,14 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout">
+    <l:layout norefresh="true">
+        <l:main-panel>
+            <j:choose>
+                <p> ${%authenticationError}</p>
+                <ul>
+                    <li>${%retry}</li>
+                    <li>${%contactAdmin}</li>
+                </ul>
+            </j:choose>
+        </l:main-panel>
+    </l:layout>
+</j:jelly>
