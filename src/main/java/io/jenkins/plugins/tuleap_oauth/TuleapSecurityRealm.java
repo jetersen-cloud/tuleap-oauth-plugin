@@ -2,19 +2,19 @@ package io.jenkins.plugins.tuleap_oauth;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.model.User;
 import hudson.security.SecurityRealm;
 import hudson.util.Secret;
+import io.jenkins.plugins.tuleap_oauth.checks.AccessTokenChecker;
 import io.jenkins.plugins.tuleap_oauth.checks.AuthorizationCodeChecker;
 import io.jenkins.plugins.tuleap_oauth.guice.TuleapOAuth2GuiceModule;
 import io.jenkins.plugins.tuleap_oauth.helper.PluginHelper;
 import jenkins.model.Jenkins;
 import jenkins.security.SecurityListener;
-import jnr.ffi.annotations.In;
+import okhttp3.*;
 import org.acegisecurity.*;
 import org.acegisecurity.context.SecurityContextHolder;
 import org.acegisecurity.providers.UsernamePasswordAuthenticationToken;
@@ -25,13 +25,18 @@ import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.*;
 
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.google.common.base.Charsets.UTF_8;
 
 public class TuleapSecurityRealm extends SecurityRealm {
+
+    private static Logger LOGGER = Logger.getLogger(TuleapSecurityRealm.class.getName());
 
     private String tuleapUri;
     private String clientId;
@@ -43,12 +48,16 @@ public class TuleapSecurityRealm extends SecurityRealm {
     public static final String STATE_SESSION_ATTRIBUTE = "state";
     private static final String REDIRECT_URI = "securityRealm/finishLogin";
 
-    private static final String SCOPE = "read:project";
+    private static final String ACCESS_TOKEN_ENDPOINT = "oauth2/token";
+
+    public static final String SCOPE = "read:project";
 
     private static final String URL_CHARACTERS_ALLOWED =  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";
 
     private AuthorizationCodeChecker authorizationCodeChecker;
     private PluginHelper pluginHelper;
+    private AccessTokenChecker accessTokenChecker;
+    private OkHttpClient httpClient;
 
     @DataBoundConstructor
     public TuleapSecurityRealm(String tuleapUri, String clientId, String clientSecret) {
@@ -65,6 +74,16 @@ public class TuleapSecurityRealm extends SecurityRealm {
     @Inject
     public void setPluginHelper(PluginHelper pluginHelper) {
         this.pluginHelper = pluginHelper;
+    }
+
+    @Inject
+    public void setAccessTokenChecker(AccessTokenChecker accessTokenChecker) {
+        this.accessTokenChecker = accessTokenChecker;
+    }
+
+    @Inject
+    public void setHttpClient(OkHttpClient httpClient) {
+        this.httpClient = httpClient;
     }
 
     public String getTuleapUri() {
@@ -143,7 +162,8 @@ public class TuleapSecurityRealm extends SecurityRealm {
 
     private void injectInstances() {
         if (this.pluginHelper == null ||
-            this.authorizationCodeChecker == null
+            this.authorizationCodeChecker == null ||
+            this.accessTokenChecker == null
         ) {
             Guice.createInjector(new TuleapOAuth2GuiceModule()).injectMembers(this);
         }
@@ -158,14 +178,54 @@ public class TuleapSecurityRealm extends SecurityRealm {
         return stateStringBuilder.toString();
     }
 
-    public HttpResponse doFinishLogin(StaplerRequest request, StaplerResponse response) throws Exception {
+    public HttpResponse doFinishLogin(StaplerRequest request, StaplerResponse response) throws IOException {
         if (!this.authorizationCodeChecker.checkAuthorizationCode(request)) {
-            return HttpResponses.redirectTo(this.getJenkinsInstance().getRootUrl() + TuleapAuthenticationErrorAction.REDIRECT_ON_AUTHENTICATION_ERROR + "/");
+            return HttpResponses.redirectTo(this.getJenkinsInstance().getRootUrl() + TuleapAuthenticationErrorAction.REDIRECT_ON_AUTHENTICATION_ERROR);
+        }
+        Request accessTokenRequest = this.getAccessTokenRequest(request);
+        OkHttpClient okHttpClient = this.httpClient;
+
+        try (Response accessTokenResponse = okHttpClient.newCall(accessTokenRequest).execute()) {
+            ResponseBody body = accessTokenResponse.body();
+            if (!accessTokenResponse.isSuccessful()) {
+                if (body == null) {
+                    LOGGER.log(Level.WARNING, "An error occurred");
+                } else {
+                    LOGGER.log(Level.WARNING, body.string());
+                }
+                return HttpResponses.redirectTo(this.getJenkinsInstance().getRootUrl() + TuleapAuthenticationErrorAction.REDIRECT_ON_AUTHENTICATION_ERROR);
+            }
+
+            if (!this.accessTokenChecker.checkResponseHeader(accessTokenResponse)) {
+                return HttpResponses.redirectTo(this.getJenkinsInstance().getRootUrl() + TuleapAuthenticationErrorAction.REDIRECT_ON_AUTHENTICATION_ERROR);
+            }
+
+            if (!this.accessTokenChecker.checkResponseBody(body)) {
+                return HttpResponses.redirectTo(this.getJenkinsInstance().getRootUrl() + TuleapAuthenticationErrorAction.REDIRECT_ON_AUTHENTICATION_ERROR);
+            }
         }
 
         this.authenticateAsAdmin(request);
 
         return HttpResponses.redirectToContextRoot();
+    }
+
+    private Request getAccessTokenRequest(StaplerRequest request) {
+
+        final String code = request.getParameter("code");
+
+        RequestBody requestBody = new FormBody.Builder()
+            .add("grant_type", "authorization_code")
+            .add("code", code)
+            .addEncoded("redirect_uri", this.pluginHelper.getJenkinsInstance().getRootUrl() + REDIRECT_URI)
+            .build();
+
+        return new Request.Builder()
+            .url(this.tuleapUri + ACCESS_TOKEN_ENDPOINT)
+            .addHeader("Authorization", Credentials.basic(this.clientId, this.clientSecret.getPlainText()))
+            .addHeader("Content-Type", "application/x-www-form-urlencoded")
+            .post(requestBody)
+            .build();
     }
 
     private Jenkins getJenkinsInstance() {
