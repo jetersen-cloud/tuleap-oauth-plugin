@@ -1,5 +1,8 @@
 package io.jenkins.plugins.tuleap_oauth.checks;
 
+import io.jenkins.plugins.tuleap_oauth.helper.PluginHelper;
+import jenkins.model.Jenkins;
+import org.junit.Before;
 import org.junit.Test;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -10,79 +13,155 @@ import static org.mockito.Mockito.*;
 
 public class AuthorizationCodeCheckerImplTest {
 
-    @Test
-    public void testItReturnFalseWhenThereIsNoCodeReturned(){
-        StaplerRequest request = mock(StaplerRequest.class);
-        when(request.getParameter("code")).thenReturn("");
-        verify(request,never()).getParameter("state");
+    private PluginHelper helper;
 
-        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl();
+    @Before
+    public void setUp() {
+        this.helper = mock(PluginHelper.class);
+    }
+
+    @Test
+    public void testItReturnsFalseWhereTheRedirectUriIsNotSaved() {
+        StaplerRequest request = mock(StaplerRequest.class);
+        HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("redirect_uri")).thenReturn(null);
+
+        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl(this.helper);
+        assertFalse(authorizationCodeChecker.checkAuthorizationCode(request));
+    }
+
+    @Test
+    public void testItReturnsFalseWhereTheRedirectUriAndTheExpectedUriDoesNotMatch() {
+        StaplerRequest request = mock(StaplerRequest.class);
+        HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("redirect_uri")).thenReturn("https://redirect.example.com/");
+
+        Jenkins jenkins = mock(Jenkins.class);
+        when(this.helper.getJenkinsInstance()).thenReturn(jenkins);
+        when(jenkins.getRootUrl()).thenReturn("https:/yeeeeeet.example.com/fail");
+
+        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl(this.helper);
+        assertFalse(authorizationCodeChecker.checkAuthorizationCode(request));
+    }
+
+    @Test
+    public void testItReturnFalseWhenThereIsNoCodeReturned() {
+        StaplerRequest request = mock(StaplerRequest.class);
+        HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("redirect_uri")).thenReturn("https://redirect.example.com/securityRealm/finishLogin");
+
+        Jenkins jenkins = mock(Jenkins.class);
+        when(this.helper.getJenkinsInstance()).thenReturn(jenkins);
+        when(jenkins.getRootUrl()).thenReturn("https://redirect.example.com/");
+
+        when(request.getParameter("code")).thenReturn("");
+        verify(request, never()).getParameter("state");
+
+        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl(this.helper);
         assertFalse(authorizationCodeChecker.checkAuthorizationCode(request));
     }
 
     @Test
     public void testItReturnFalseWhenThereIsNoStateReturned(){
         StaplerRequest request = mock(StaplerRequest.class);
+        HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("redirect_uri")).thenReturn("https://redirect.example.com/securityRealm/finishLogin");
+
+        Jenkins jenkins = mock(Jenkins.class);
+        when(this.helper.getJenkinsInstance()).thenReturn(jenkins);
+        when(jenkins.getRootUrl()).thenReturn("https://redirect.example.com/");
+
         when(request.getParameter("code")).thenReturn("1234");
         when(request.getParameter("state")).thenReturn("");
-        HttpSession session = mock(HttpSession.class);
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("state")).thenReturn("");
 
-        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl();
+        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl(this.helper);
         assertFalse(authorizationCodeChecker.checkAuthorizationCode(request));
     }
     @Test
     public void testItReturnFalseWhenThereIsNoStateStoredInSession(){
         StaplerRequest request = mock(StaplerRequest.class);
+        HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("redirect_uri")).thenReturn("https://redirect.example.com/securityRealm/finishLogin");
+
+        Jenkins jenkins = mock(Jenkins.class);
+        when(this.helper.getJenkinsInstance()).thenReturn(jenkins);
+        when(jenkins.getRootUrl()).thenReturn("https://redirect.example.com/");
+
         when(request.getParameter("code")).thenReturn("1234");
         when(request.getParameter("state")).thenReturn("issou");
-        HttpSession session = mock(HttpSession.class);
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("state")).thenReturn(null);
 
-        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl();
+        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl(this.helper);
         assertFalse(authorizationCodeChecker.checkAuthorizationCode(request));
     }
 
     @Test
     public void testItReturnFalseWhenTheStoredSessionStateAndTheReturnedStateAreDifferent() {
         StaplerRequest request = mock(StaplerRequest.class);
+        HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("redirect_uri")).thenReturn("https://redirect.example.com/securityRealm/finishLogin");
+
+        Jenkins jenkins = mock(Jenkins.class);
+        when(this.helper.getJenkinsInstance()).thenReturn(jenkins);
+        when(jenkins.getRootUrl()).thenReturn("https://redirect.example.com/");
+
         when(request.getParameter("code")).thenReturn("1234");
         when(request.getParameter("state")).thenReturn("issou");
-        HttpSession session = mock(HttpSession.class);
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("state")).thenReturn("naha");
 
-        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl();
+        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl(this.helper);
         assertFalse(authorizationCodeChecker.checkAuthorizationCode(request));
     }
 
     @Test
     public void testItReturnFalseWhenThereIsNoCodeVerifierStoredInSession() {
         StaplerRequest request = mock(StaplerRequest.class);
+        HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("redirect_uri")).thenReturn("https://redirect.example.com/securityRealm/finishLogin");
+
+        Jenkins jenkins = mock(Jenkins.class);
+        when(this.helper.getJenkinsInstance()).thenReturn(jenkins);
+        when(jenkins.getRootUrl()).thenReturn("https://redirect.example.com/");
+
         when(request.getParameter("code")).thenReturn("1234");
         when(request.getParameter("state")).thenReturn("issou");
-        HttpSession session = mock(HttpSession.class);
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("state")).thenReturn("issou");
         when(session.getAttribute("code_verifier")).thenReturn(null);
 
-        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl();
+        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl(this.helper);
         assertFalse(authorizationCodeChecker.checkAuthorizationCode(request));
     }
 
     @Test
     public void testItReturnTrueAuthorizationChecksAreOk() {
         StaplerRequest request = mock(StaplerRequest.class);
+        HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
+        when(session.getAttribute("redirect_uri")).thenReturn("https://redirect.example.com/securityRealm/finishLogin");
+
+        Jenkins jenkins = mock(Jenkins.class);
+        when(this.helper.getJenkinsInstance()).thenReturn(jenkins);
+        when(jenkins.getRootUrl()).thenReturn("https://redirect.example.com/");
+
         when(request.getParameter("code")).thenReturn("1234");
         when(request.getParameter("state")).thenReturn("issou");
-        HttpSession session = mock(HttpSession.class);
         when(request.getSession()).thenReturn(session);
         when(session.getAttribute("state")).thenReturn("issou");
         when(session.getAttribute("code_verifier")).thenReturn("tchiki tchiki");
 
-        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl();
+        AuthorizationCodeCheckerImpl authorizationCodeChecker = new AuthorizationCodeCheckerImpl(this.helper);
         assertTrue(authorizationCodeChecker.checkAuthorizationCode(request));
     }
 }

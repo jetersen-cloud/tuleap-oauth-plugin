@@ -1,6 +1,8 @@
 package io.jenkins.plugins.tuleap_oauth.checks;
 
+import com.google.inject.Inject;
 import io.jenkins.plugins.tuleap_oauth.TuleapSecurityRealm;
+import io.jenkins.plugins.tuleap_oauth.helper.PluginHelper;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -10,8 +12,29 @@ import java.util.logging.Logger;
 public class AuthorizationCodeCheckerImpl implements AuthorizationCodeChecker {
     private static Logger LOGGER = Logger.getLogger(AuthorizationCodeCheckerImpl.class.getName());
 
+    private PluginHelper pluginHelper;
+
+    @Inject
+    public AuthorizationCodeCheckerImpl(PluginHelper pluginHelper) {
+        this.pluginHelper = pluginHelper;
+    }
+
     public boolean checkAuthorizationCode(StaplerRequest request) {
-        final String code = request.getParameter("code");
+
+        String expectedRedirectURI = (String) request.getSession().getAttribute(TuleapSecurityRealm.JENKINS_REDIRECT_URI_ATTRIBUTE);
+
+        if(StringUtils.isBlank(expectedRedirectURI)){
+            LOGGER.log(Level.WARNING, "no redirect saved from user's session");
+            return false;
+        }
+
+        if (!expectedRedirectURI.equals(
+            this.pluginHelper.getJenkinsInstance().getRootUrl() + TuleapSecurityRealm.REDIRECT_URI)
+        ) {
+            LOGGER.log(Level.WARNING, "the expected URI changed during redirection");
+            return false;
+        }
+            final String code = request.getParameter("code");
 
         if (StringUtils.isBlank(code)) {
             LOGGER.log(Level.WARNING, "no code returned");

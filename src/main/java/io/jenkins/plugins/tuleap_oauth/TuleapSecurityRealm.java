@@ -45,12 +45,14 @@ public class TuleapSecurityRealm extends SecurityRealm {
     private Secret clientSecret;
 
     private static final String LOGIN_URL = "securityRealm/commenceLogin";
-    private static final String AUTHORIZATION_ENDPOINT = "oauth2/authorize?";
+    public static final String REDIRECT_URI = "securityRealm/finishLogin";
 
     public static final String CODE_VERIFIER_SESSION_ATTRIBUTE = "code_verifier";
     public static final String STATE_SESSION_ATTRIBUTE = "state";
-    private static final String REDIRECT_URI = "securityRealm/finishLogin";
+    public static final String JENKINS_REDIRECT_URI_ATTRIBUTE = "redirect_uri";
 
+
+    private static final String AUTHORIZATION_ENDPOINT = "oauth2/authorize?";
     private static final String ACCESS_TOKEN_ENDPOINT = "oauth2/token";
 
     public static final String SCOPE = "read:project";
@@ -160,10 +162,11 @@ public class TuleapSecurityRealm extends SecurityRealm {
         final String rootUrl = this.getJenkinsInstance().getRootUrl();
 
         final String redirectUri = URLEncoder.encode(rootUrl + REDIRECT_URI, UTF_8.name());
-
         final String codeVerifier = this.codeBuilder.buildCodeVerifier();
         final String codeChallenge = this.codeBuilder.buildCodeChallenge(codeVerifier);
         request.getSession().setAttribute(CODE_VERIFIER_SESSION_ATTRIBUTE, codeVerifier);
+
+        request.getSession().setAttribute(JENKINS_REDIRECT_URI_ATTRIBUTE, this.pluginHelper.getJenkinsInstance().getRootUrl() + REDIRECT_URI);
 
         return new HttpRedirect(this.tuleapUri + AUTHORIZATION_ENDPOINT +
             "response_type=code" +
@@ -198,6 +201,7 @@ public class TuleapSecurityRealm extends SecurityRealm {
         if (!this.authorizationCodeChecker.checkAuthorizationCode(request)) {
             return HttpResponses.redirectTo(this.getJenkinsInstance().getRootUrl() + TuleapAuthenticationErrorAction.REDIRECT_ON_AUTHENTICATION_ERROR);
         }
+
         Request accessTokenRequest = this.getAccessTokenRequest(request);
         OkHttpClient okHttpClient = this.httpClient;
 
