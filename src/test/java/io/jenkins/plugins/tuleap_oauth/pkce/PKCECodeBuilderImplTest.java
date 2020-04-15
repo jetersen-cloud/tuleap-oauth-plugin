@@ -1,11 +1,8 @@
 package io.jenkins.plugins.tuleap_oauth.pkce;
 
 import io.jenkins.plugins.tuleap_oauth.helper.PluginHelper;
-import org.apache.commons.codec.binary.Base64;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 
 import java.security.NoSuchAlgorithmException;
 
@@ -24,9 +21,9 @@ public class PKCECodeBuilderImplTest {
     @Test
     public void testItShouldReturnAStringFromPluginHelper() {
         final PKCECodeBuilder codeBuilder = new PKCECodeBuilderImpl(this.pluginHelper);
-        when(this.pluginHelper.buildRandomBase64EncodedURLSafeString(32)).thenReturn("123");
+        when(this.pluginHelper.buildRandomBase64EncodedURLSafeString()).thenReturn("123");
 
-        assertEquals("123", this.pluginHelper.buildRandomBase64EncodedURLSafeString(32));
+        assertEquals("123", this.pluginHelper.buildRandomBase64EncodedURLSafeString());
     }
 
     @Test

@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,9 +56,6 @@ public class TuleapSecurityRealm extends SecurityRealm {
 
     public static final String SCOPE = "read:project";
     public static final String CODE_CHALLENGE_METHOD = "S256";
-
-    // https://tools.ietf.org/html/rfc6749#section-10.10
-    public static final int STATE_RECOMMENDED_LENGTH = 30;
 
     private AuthorizationCodeChecker authorizationCodeChecker;
     private PluginHelper pluginHelper;
@@ -157,7 +153,7 @@ public class TuleapSecurityRealm extends SecurityRealm {
     public HttpResponse doCommenceLogin(StaplerRequest request) throws UnsupportedEncodingException, NoSuchAlgorithmException {
         this.injectInstances();
 
-        final String state = this.pluginHelper.buildRandomBase64EncodedURLSafeString(STATE_RECOMMENDED_LENGTH);
+        final String state = this.pluginHelper.buildRandomBase64EncodedURLSafeString();
         request.getSession().setAttribute(STATE_SESSION_ATTRIBUTE, state);
 
         final String rootUrl = this.getJenkinsInstance().getRootUrl();

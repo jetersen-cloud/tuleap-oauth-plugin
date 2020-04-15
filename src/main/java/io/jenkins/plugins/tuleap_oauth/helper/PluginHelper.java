@@ -4,5 +4,5 @@ import jenkins.model.Jenkins;
 
 public interface PluginHelper {
     Jenkins getJenkinsInstance();
-    String buildRandomBase64EncodedURLSafeString(final int byteLength);
+    String buildRandomBase64EncodedURLSafeString();
 }

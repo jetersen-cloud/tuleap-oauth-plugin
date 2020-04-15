@@ -6,6 +6,9 @@ import org.apache.commons.codec.binary.Base64;
 import java.security.SecureRandom;
 
 public class PluginHelperImpl implements PluginHelper {
+
+    private final static Integer RECOMMENDED_LENGTH = 32;
+
     public Jenkins getJenkinsInstance() {
         Jenkins jenkins = Jenkins.getInstanceOrNull();
         if (jenkins == null) {
@@ -14,8 +17,8 @@ public class PluginHelperImpl implements PluginHelper {
         return jenkins;
     }
 
-    public String buildRandomBase64EncodedURLSafeString(final int byteLength) {
-        byte[] code = new byte[byteLength];
+    public String buildRandomBase64EncodedURLSafeString() {
+        byte[] code = new byte[RECOMMENDED_LENGTH];
         SecureRandom secureRandom = new SecureRandom();
         secureRandom.nextBytes(code);
         return Base64.encodeBase64URLSafeString(code);

@@ -7,10 +7,8 @@ import org.apache.commons.codec.binary.Base64;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 
 public class PKCECodeBuilderImpl implements PKCECodeBuilder {
-    private final static Integer RFC_CODE_VERIFIER_RECOMMENDED_LENGTH = 32;
 
     private PluginHelper pluginHelper;
 
@@ -21,7 +19,7 @@ public class PKCECodeBuilderImpl implements PKCECodeBuilder {
 
     @Override
     public String buildCodeVerifier() {
-        return this.pluginHelper.buildRandomBase64EncodedURLSafeString(RFC_CODE_VERIFIER_RECOMMENDED_LENGTH);
+        return this.pluginHelper.buildRandomBase64EncodedURLSafeString();
     }
 
     @Override

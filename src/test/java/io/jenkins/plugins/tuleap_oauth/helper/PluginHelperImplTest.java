@@ -10,8 +10,8 @@ public class PluginHelperImplTest {
     @Test
     public void testItShouldReturnARandomStringInBase64() {
         final PluginHelperImpl codeBuilder = new PluginHelperImpl();
-        final String result1 = codeBuilder.buildRandomBase64EncodedURLSafeString(32);
-        final String result2 = codeBuilder.buildRandomBase64EncodedURLSafeString(32);
+        final String result1 = codeBuilder.buildRandomBase64EncodedURLSafeString();
+        final String result2 = codeBuilder.buildRandomBase64EncodedURLSafeString();
 
         assertTrue(Base64.isBase64(result1));
         assertTrue(Base64.isBase64(result2));
@@ -22,6 +22,6 @@ public class PluginHelperImplTest {
     public void itShouldGenerateA43BytesLongSequence() {
         final PluginHelperImpl codeBuilder = new PluginHelperImpl();
 
-        assertEquals(43, codeBuilder.buildRandomBase64EncodedURLSafeString(32).getBytes().length);
+        assertEquals(43, codeBuilder.buildRandomBase64EncodedURLSafeString().getBytes().length);
     }
 }
