@@ -58,7 +58,8 @@ public class TuleapSecurityRealm extends SecurityRealm {
     public static final String SCOPE = "read:project";
     public static final String CODE_CHALLENGE_METHOD = "S256";
 
-    private static final String URL_CHARACTERS_ALLOWED =  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~";
+    // https://tools.ietf.org/html/rfc6749#section-10.10
+    public static final int STATE_RECOMMENDED_LENGTH = 30;
 
     private AuthorizationCodeChecker authorizationCodeChecker;
     private PluginHelper pluginHelper;
@@ -156,7 +157,7 @@ public class TuleapSecurityRealm extends SecurityRealm {
     public HttpResponse doCommenceLogin(StaplerRequest request) throws UnsupportedEncodingException, NoSuchAlgorithmException {
         this.injectInstances();
 
-        final String state = this.buildStateRandomString();
+        final String state = this.pluginHelper.buildRandomBase64EncodedURLSafeString(STATE_RECOMMENDED_LENGTH);
         request.getSession().setAttribute(STATE_SESSION_ATTRIBUTE, state);
 
         final String rootUrl = this.getJenkinsInstance().getRootUrl();
@@ -186,15 +187,6 @@ public class TuleapSecurityRealm extends SecurityRealm {
         ) {
             Guice.createInjector(new TuleapOAuth2GuiceModule()).injectMembers(this);
         }
-    }
-
-    private String buildStateRandomString() {
-        final SecureRandom secureRandom = new SecureRandom();
-        final StringBuilder stateStringBuilder = new StringBuilder();
-        for (int i = 0; i < 30; i++) {
-            stateStringBuilder.append(URL_CHARACTERS_ALLOWED.charAt(secureRandom.nextInt(URL_CHARACTERS_ALLOWED.length())));
-        }
-        return stateStringBuilder.toString();
     }
 
     public HttpResponse doFinishLogin(StaplerRequest request, StaplerResponse response) throws IOException {

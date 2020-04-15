@@ -1,5 +1,7 @@
 package io.jenkins.plugins.tuleap_oauth.pkce;
 
+import com.google.inject.Inject;
+import io.jenkins.plugins.tuleap_oauth.helper.PluginHelper;
 import org.apache.commons.codec.binary.Base64;
 
 import java.nio.charset.StandardCharsets;
@@ -10,12 +12,16 @@ import java.security.SecureRandom;
 public class PKCECodeBuilderImpl implements PKCECodeBuilder {
     private final static Integer RFC_CODE_VERIFIER_RECOMMENDED_LENGTH = 32;
 
+    private PluginHelper pluginHelper;
+
+    @Inject
+    public PKCECodeBuilderImpl(PluginHelper pluginHelper){
+        this.pluginHelper = pluginHelper;
+    }
+
     @Override
     public String buildCodeVerifier() {
-        byte[] code = new byte[RFC_CODE_VERIFIER_RECOMMENDED_LENGTH];
-        SecureRandom secureRandom = new SecureRandom();
-        secureRandom.nextBytes(code);
-        return Base64.encodeBase64URLSafeString(code);
+        return this.pluginHelper.buildRandomBase64EncodedURLSafeString(RFC_CODE_VERIFIER_RECOMMENDED_LENGTH);
     }
 
     @Override
