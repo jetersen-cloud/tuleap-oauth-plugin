@@ -54,7 +54,7 @@ public class TuleapSecurityRealm extends SecurityRealm {
     private static final String AUTHORIZATION_ENDPOINT = "oauth2/authorize?";
     private static final String ACCESS_TOKEN_ENDPOINT = "oauth2/token";
 
-    public static final String SCOPE = "read:project";
+    private static final String SCOPES = "read:project read:user_membership";
     public static final String CODE_CHALLENGE_METHOD = "S256";
 
     private AuthorizationCodeChecker authorizationCodeChecker;
@@ -169,7 +169,7 @@ public class TuleapSecurityRealm extends SecurityRealm {
             "response_type=code" +
             "&client_id=" + this.clientId +
             "&redirect_uri=" + redirectUri +
-            "&scope=" + SCOPE +
+            "&scope=" + SCOPES +
             "&state=" + state +
             "&code_challenge=" + codeChallenge +
             "&code_challenge_method="+ CODE_CHALLENGE_METHOD
