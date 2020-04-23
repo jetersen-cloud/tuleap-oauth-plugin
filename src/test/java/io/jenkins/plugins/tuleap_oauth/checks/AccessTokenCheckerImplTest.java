@@ -117,7 +117,7 @@ public class AccessTokenCheckerImplTest {
         when(this.gson.fromJson(body.string(), AccessTokenRepresentation.class)).thenReturn(representation);
 
         AccessTokenCheckerImpl accessTokenChecker = new AccessTokenCheckerImpl(this.gson);
-        assertFalse(accessTokenChecker.checkResponseBody(body));
+        assertFalse(accessTokenChecker.checkResponseBody(representation));
     }
 
     @Test
@@ -130,7 +130,7 @@ public class AccessTokenCheckerImplTest {
         when(this.gson.fromJson(body.string(), AccessTokenRepresentation.class)).thenReturn(representation);
 
         AccessTokenCheckerImpl accessTokenChecker = new AccessTokenCheckerImpl(this.gson);
-        assertFalse(accessTokenChecker.checkResponseBody(body));
+        assertFalse(accessTokenChecker.checkResponseBody(representation));
     }
 
     @Test
@@ -143,7 +143,7 @@ public class AccessTokenCheckerImplTest {
         when(this.gson.fromJson(body.string(), AccessTokenRepresentation.class)).thenReturn(representation);
 
         AccessTokenCheckerImpl accessTokenChecker = new AccessTokenCheckerImpl(this.gson);
-        assertFalse(accessTokenChecker.checkResponseBody(body));
+        assertFalse(accessTokenChecker.checkResponseBody(representation));
     }
 
     @Test
@@ -157,7 +157,22 @@ public class AccessTokenCheckerImplTest {
         when(this.gson.fromJson(body.string(), AccessTokenRepresentation.class)).thenReturn(representation);
 
         AccessTokenCheckerImpl accessTokenChecker = new AccessTokenCheckerImpl(this.gson);
-        assertFalse(accessTokenChecker.checkResponseBody(body));
+        assertFalse(accessTokenChecker.checkResponseBody(representation));
+    }
+
+    @Test
+    public void testResponseBodyReturnsFalseWhenTheIdTokenIsMissing() throws IOException {
+        ResponseBody body = mock(ResponseBody.class);
+
+        AccessTokenRepresentation representation = mock(AccessTokenRepresentation.class);
+        when(representation.getAccessToken()).thenReturn("vroom vroom");
+        when(representation.getTokenType()).thenReturn("bearer");
+        when(representation.getExpiresIn()).thenReturn("1202424");
+        when(representation.getIdToken()).thenReturn(null);
+        when(this.gson.fromJson(body.string(), AccessTokenRepresentation.class)).thenReturn(representation);
+
+        AccessTokenCheckerImpl accessTokenChecker = new AccessTokenCheckerImpl(this.gson);
+        assertFalse(accessTokenChecker.checkResponseBody(representation));
     }
 
     @Test
@@ -168,9 +183,10 @@ public class AccessTokenCheckerImplTest {
         when(representation.getAccessToken()).thenReturn("vroom vroom");
         when(representation.getTokenType()).thenReturn("bearer");
         when(representation.getExpiresIn()).thenReturn("1202424");
+        when(representation.getIdToken()).thenReturn("ignseojseogjiosevjazfoaz");
         when(this.gson.fromJson(body.string(), AccessTokenRepresentation.class)).thenReturn(representation);
 
         AccessTokenCheckerImpl accessTokenChecker = new AccessTokenCheckerImpl(this.gson);
-        assertTrue(accessTokenChecker.checkResponseBody(body));
+        assertTrue(accessTokenChecker.checkResponseBody(representation));
     }
 }

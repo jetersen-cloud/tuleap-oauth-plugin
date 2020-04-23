@@ -12,6 +12,9 @@ public class AccessTokenRepresentation {
     @SerializedName("expires_in")
     private String expiresIn;
 
+    @SerializedName("id_token")
+    private String idToken;
+
     public String getAccessToken() {
         return accessToken;
     }
@@ -23,4 +26,9 @@ public class AccessTokenRepresentation {
     public String getExpiresIn() {
         return expiresIn;
     }
+
+    public String getIdToken() {
+        return idToken;
+    }
+
 }
