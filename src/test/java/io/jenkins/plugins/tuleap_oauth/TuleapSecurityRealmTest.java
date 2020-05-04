@@ -3,7 +3,7 @@ package io.jenkins.plugins.tuleap_oauth;
 import com.google.gson.Gson;
 import io.jenkins.plugins.tuleap_oauth.checks.AccessTokenChecker;
 import io.jenkins.plugins.tuleap_oauth.checks.AuthorizationCodeChecker;
-import io.jenkins.plugins.tuleap_oauth.checks.JWTChecker;
+import io.jenkins.plugins.tuleap_oauth.checks.IDTokenChecker;
 import io.jenkins.plugins.tuleap_oauth.helper.PluginHelper;
 import io.jenkins.plugins.tuleap_oauth.helper.PluginHelperImpl;
 import io.jenkins.plugins.tuleap_oauth.helper.TuleapAuthorizationCodeUrlBuilder;
@@ -23,7 +23,7 @@ public class TuleapSecurityRealmTest {
     private AuthorizationCodeChecker authorizationCodeChecker;
     private AccessTokenChecker accessTokenChecker;
     private Gson gson;
-    private JWTChecker jwtChecker;
+    private IDTokenChecker IDTokenChecker;
     private OkHttpClient httpClient;
     private TuleapAuthorizationCodeUrlBuilder authorizationCodeUrlBuilder;
 
@@ -35,7 +35,7 @@ public class TuleapSecurityRealmTest {
         this.authorizationCodeChecker = mock(AuthorizationCodeChecker.class);
         this.accessTokenChecker = mock(AccessTokenChecker.class);
         this.gson = mock(Gson.class);
-        this.jwtChecker = mock(JWTChecker.class);
+        this.IDTokenChecker = mock(IDTokenChecker.class);
         this.httpClient = mock(OkHttpClient.class);
         this.authorizationCodeUrlBuilder = mock(TuleapAuthorizationCodeUrlBuilder.class);
 
@@ -48,7 +48,7 @@ public class TuleapSecurityRealmTest {
         securityRealm.setAuthorizationCodeChecker(this.authorizationCodeChecker);
         securityRealm.setAccessTokenChecker(this.accessTokenChecker);
         securityRealm.setGson(this.gson);
-        securityRealm.setJwtChecker(this.jwtChecker);
+        securityRealm.setIDTokenChecker(this.IDTokenChecker);
         securityRealm.setHttpClient(this.httpClient);
         securityRealm.setAuthorizationCodeUrlBuilder(this.authorizationCodeUrlBuilder);
     }

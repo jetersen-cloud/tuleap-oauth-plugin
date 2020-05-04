@@ -33,8 +33,31 @@ public class TuleapAuthorizationCodeUrlBuilderImplTest {
     }
 
     @Test
+    public void testItReturnsTheAuthenticationErrorActionUrlWhenUrlIsNotHttps() throws UnsupportedEncodingException, NoSuchAlgorithmException {
+        StaplerRequest request = mock(StaplerRequest.class);
+
+        when(this.pluginHelper.isHttpsUrl("http://fail.example.com")).thenReturn(false);
+
+        when(jenkins.getRootUrl()).thenReturn("https://jenkins.example.com/");
+
+        TuleapAuthorizationCodeUrlBuilderImpl tuleapAuthorizationCodeUrlBuilder = new TuleapAuthorizationCodeUrlBuilderImpl(this.pluginHelper, this.codeBuilder);
+        String redirectUri = tuleapAuthorizationCodeUrlBuilder.
+            buildRedirectUrlAndStoreSessionAttribute(
+                request,
+                "http://fail.example.com",
+                ""
+            );
+
+        verify(this.pluginHelper, never()).buildRandomBase64EncodedURLSafeString();
+        assertEquals("https://jenkins.example.com/tuleapError", redirectUri);
+    }
+
+    @Test
     public void testItShouldReturnTheAuthorizationCodeUriWithTheRightParameters() throws NoSuchAlgorithmException, UnsupportedEncodingException {
         StaplerRequest request = mock(StaplerRequest.class);
+
+        String tuleapUri = "https://tuleap.example.com/";
+        when(this.pluginHelper.isHttpsUrl(tuleapUri)).thenReturn(true);
 
         String stateAndNonce = "Brabus";
         when(this.pluginHelper.buildRandomBase64EncodedURLSafeString()).thenReturn(stateAndNonce);
@@ -50,13 +73,12 @@ public class TuleapAuthorizationCodeUrlBuilderImplTest {
         when(this.codeBuilder.buildCodeChallenge(codeVerifier)).thenReturn("B35S");
 
         String clientId = "123";
-        String tuleapUri = "https://tuleap.example.com/";
 
         String expectedUri = "https://tuleap.example.com/oauth2/authorize?" +
             "response_type=code" +
             "&client_id=123" +
             "&redirect_uri=" + URLEncoder.encode("https://jenkins.example.com/securityRealm/finishLogin", UTF_8.name()) +
-            "&scope=read:project read:user_membership openid profile" +
+            "&scope="+ URLEncoder.encode("read:project read:user_membership openid profile", UTF_8.name()) +
             "&state=Brabus" +
             "&code_challenge=B35S" +
             "&code_challenge_method=S256" +

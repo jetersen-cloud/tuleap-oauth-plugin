@@ -6,9 +6,10 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import org.kohsuke.stapler.StaplerRequest;
 
+import java.io.IOException;
 import java.util.List;
 
-public interface JWTChecker {
+public interface IDTokenChecker {
     void checkHeader(DecodedJWT jwt);
-    void checkPayloadAndSignature(DecodedJWT jwt, List<Jwk> jwks, String issuer, String audience, StaplerRequest request) throws InvalidPublicKeyException;
+    void checkPayloadAndSignature(DecodedJWT jwt, List<Jwk> jwks, String issuer, String audience, StaplerRequest request) throws InvalidPublicKeyException, IOException;
 }

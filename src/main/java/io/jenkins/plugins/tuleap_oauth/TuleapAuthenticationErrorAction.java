@@ -8,7 +8,7 @@ import javax.annotation.CheckForNull;
 @Extension
 public class TuleapAuthenticationErrorAction implements UnprotectedRootAction {
 
-    static final String REDIRECT_ON_AUTHENTICATION_ERROR = "tuleapError";
+    public static final String REDIRECT_ON_AUTHENTICATION_ERROR = "tuleapError";
 
     @CheckForNull
     @Override

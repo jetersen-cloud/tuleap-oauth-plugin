@@ -11,10 +11,11 @@ import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.model.User;
 import hudson.security.SecurityRealm;
+import hudson.util.FormValidation;
 import hudson.util.Secret;
 import io.jenkins.plugins.tuleap_oauth.checks.AccessTokenChecker;
 import io.jenkins.plugins.tuleap_oauth.checks.AuthorizationCodeChecker;
-import io.jenkins.plugins.tuleap_oauth.checks.JWTChecker;
+import io.jenkins.plugins.tuleap_oauth.checks.IDTokenChecker;
 import io.jenkins.plugins.tuleap_oauth.checks.UserInfoChecker;
 import io.jenkins.plugins.tuleap_oauth.guice.TuleapOAuth2GuiceModule;
 import io.jenkins.plugins.tuleap_oauth.helper.PluginHelper;
@@ -30,6 +31,7 @@ import org.acegisecurity.userdetails.UsernameNotFoundException;
 
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.*;
+import org.kohsuke.stapler.verb.POST;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpSession;
@@ -70,7 +72,7 @@ public class TuleapSecurityRealm extends SecurityRealm {
     private AccessTokenChecker accessTokenChecker;
     private OkHttpClient httpClient;
     private Gson gson;
-    private JWTChecker jwtChecker;
+    private IDTokenChecker IDTokenChecker;
     private UserInfoChecker userInfoChecker;
     private TuleapAuthorizationCodeUrlBuilder authorizationCodeUrlBuilder;
 
@@ -92,8 +94,8 @@ public class TuleapSecurityRealm extends SecurityRealm {
     }
 
     @Inject
-    public void setJwtChecker(JWTChecker jwtChecker) {
-        this.jwtChecker = jwtChecker;
+    public void setIDTokenChecker(IDTokenChecker IDTokenChecker) {
+        this.IDTokenChecker = IDTokenChecker;
     }
 
     @Inject
@@ -187,7 +189,7 @@ public class TuleapSecurityRealm extends SecurityRealm {
             this.authorizationCodeChecker == null ||
             this.accessTokenChecker == null ||
             this.gson == null ||
-            this.jwtChecker == null ||
+            this.IDTokenChecker == null ||
             this.authorizationCodeUrlBuilder == null
         ) {
             Guice.createInjector(new TuleapOAuth2GuiceModule()).injectMembers(this);
@@ -223,8 +225,8 @@ public class TuleapSecurityRealm extends SecurityRealm {
         List<Jwk> jwks = provider.getAll();
         DecodedJWT idToken = JWT.decode(accessTokenRepresentation.getIdToken());
 
-        this.jwtChecker.checkHeader(idToken);
-        this.jwtChecker.checkPayloadAndSignature(idToken, jwks,this.tuleapUri,this.clientId,request);
+        this.IDTokenChecker.checkHeader(idToken);
+        this.IDTokenChecker.checkPayloadAndSignature(idToken, jwks,this.tuleapUri,this.clientId,request);
 
         Request req = new Request.Builder()
             .url(this.tuleapUri + USER_INFO_ENDPOINT)
@@ -322,6 +324,15 @@ public class TuleapSecurityRealm extends SecurityRealm {
         @Override
         public String getDisplayName() {
             return "Tuleap Authentication";
+        }
+
+        @POST
+        public FormValidation doCheckTuleapUri(@QueryParameter String tuleapUri){
+         final PluginHelper pluginHelper = Guice.createInjector(new TuleapOAuth2GuiceModule()).getInstance(PluginHelper.class);
+           if(pluginHelper.isHttpsUrl(tuleapUri)){
+               return FormValidation.ok();
+           }
+           return FormValidation.error(Messages.TuleapSecurityRealmDescriptor_CheckUrl());
         }
     }
 }

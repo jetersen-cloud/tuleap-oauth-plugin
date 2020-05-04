@@ -4,12 +4,19 @@ import com.auth0.jwk.InvalidPublicKeyException;
 import com.auth0.jwk.Jwk;
 import com.auth0.jwt.algorithms.Algorithm;
 import jenkins.model.Jenkins;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.apache.commons.net.util.Base64;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class PluginHelperImpl implements PluginHelper {
+
+    private static Logger LOGGER = Logger.getLogger(PluginHelper.class.getName());
 
     private final static Integer RECOMMENDED_LENGTH = 32;
 
@@ -31,5 +38,27 @@ public class PluginHelperImpl implements PluginHelper {
     @Override
     public Algorithm getAlgorithm(Jwk jwk) throws InvalidPublicKeyException {
         return Algorithm.RSA256((RSAPublicKey)jwk.getPublicKey(),null);
+    }
+
+    @Override
+    public boolean isHttpsUrl(String url) {
+        return url.matches("^(https)://.*$");
+    }
+
+    @Override
+    public ResponseBody getResponseBody(Response response) throws IOException {
+        ResponseBody body = response.body();
+
+        if (body == null) {
+            LOGGER.log(Level.WARNING, "An error occurred, body is null");
+            return null;
+        }
+
+        if (!response.isSuccessful()) {
+            LOGGER.log(Level.WARNING, body.string());
+            return null;
+        }
+
+        return body;
     }
 }

@@ -18,7 +18,7 @@ public class TuleapOAuth2GuiceModule extends AbstractModule {
         bind(PluginHelper.class).to(PluginHelperImpl.class);
         bind(AccessTokenChecker.class).to(AccessTokenCheckerImpl.class);
         bind(PKCECodeBuilder.class).to(PKCECodeBuilderImpl.class);
-        bind(JWTChecker.class).to(JWTCheckerImpl.class);
+        bind(IDTokenChecker.class).to(IDTokenCheckerImpl.class);
         bind(UserInfoChecker.class).to(UserInfoCheckerImpl.class);
         bind(TuleapAuthorizationCodeUrlBuilder.class).to(TuleapAuthorizationCodeUrlBuilderImpl.class);
         bind(OkHttpClient.class).toProvider(OkHttpClientProvider.class).asEagerSingleton();
