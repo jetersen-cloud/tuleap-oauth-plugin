@@ -1,6 +1,7 @@
 package io.jenkins.plugins.tuleap_oauth;
 
 import com.google.gson.Gson;
+import hudson.util.FormValidation;
 import io.jenkins.plugins.tuleap_oauth.checks.AccessTokenChecker;
 import io.jenkins.plugins.tuleap_oauth.checks.AuthorizationCodeChecker;
 import io.jenkins.plugins.tuleap_oauth.checks.IDTokenChecker;
@@ -96,7 +97,44 @@ public class TuleapSecurityRealmTest {
     }
 
     @Test
-    public void testItShouldReturnTheTuleapAuthenticationTokenWhenTheUserConnectsWithThePlugin(){
+    public void testTheValidationIsOkWhenTheClientIdIsValid() {
+        TuleapSecurityRealm.DescriptorImpl descriptor = new TuleapSecurityRealm.DescriptorImpl();
+        assertEquals(FormValidation.ok(), descriptor.doCheckClientId("tlp-client-id-1"));
+        assertEquals(FormValidation.ok(), descriptor.doCheckClientId("tlp-client-id-48488484"));
+    }
 
+    @Test
+    public void testTheValidationIsNotOkWhenTheClientIdFormatIsNotValid() {
+        TuleapSecurityRealm.DescriptorImpl descriptor = new TuleapSecurityRealm.DescriptorImpl();
+        assertEquals(
+            FormValidation.error(Messages.TuleapSecurityRealmDescriptor_CheckClientIdFormat()).getMessage(),
+            descriptor.doCheckClientId("tlp-client-id-fghhf").getMessage()
+        );
+        assertEquals(FormValidation.error(
+            Messages.TuleapSecurityRealmDescriptor_CheckClientIdFormat()).getMessage(),
+            descriptor.doCheckClientId("freogjeuobnfb").getMessage()
+        );
+        assertEquals(FormValidation.error(
+            Messages.TuleapSecurityRealmDescriptor_CheckClientIdFormat()).getMessage(),
+            descriptor.doCheckClientId("snv-tlp-client-id-10").getMessage()
+        );
+        assertEquals(FormValidation.error(
+            Messages.TuleapSecurityRealmDescriptor_CheckClientIdFormat()).getMessage(),
+            descriptor.doCheckClientId("tlp-id-10").getMessage()
+        );
+
+        assertEquals(FormValidation.error(
+            Messages.TuleapSecurityRealmDescriptor_CheckClientIdFormat()).getMessage(),
+            descriptor.doCheckClientId("tlp-client-id-").getMessage()
+        );
+    }
+
+    @Test
+    public void testTheValidationIsNotOkWhenTheClientIdIsEmpty() {
+        TuleapSecurityRealm.DescriptorImpl descriptor = new TuleapSecurityRealm.DescriptorImpl();
+        assertEquals(FormValidation.error(
+            Messages.TuleapSecurityRealmDescriptor_CheckClientIdEmpty()).getMessage(),
+            descriptor.doCheckClientId("").getMessage()
+        );
     }
 }

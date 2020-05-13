@@ -327,12 +327,24 @@ public class TuleapSecurityRealm extends SecurityRealm {
         }
 
         @POST
-        public FormValidation doCheckTuleapUri(@QueryParameter String tuleapUri){
-         final PluginHelper pluginHelper = Guice.createInjector(new TuleapOAuth2GuiceModule()).getInstance(PluginHelper.class);
-           if(pluginHelper.isHttpsUrl(tuleapUri)){
-               return FormValidation.ok();
-           }
-           return FormValidation.error(Messages.TuleapSecurityRealmDescriptor_CheckUrl());
+        public FormValidation doCheckTuleapUri(@QueryParameter String tuleapUri) {
+            final PluginHelper pluginHelper = Guice.createInjector(new TuleapOAuth2GuiceModule()).getInstance(PluginHelper.class);
+            if (pluginHelper.isHttpsUrl(tuleapUri)) {
+                return FormValidation.ok();
+            }
+            return FormValidation.error(Messages.TuleapSecurityRealmDescriptor_CheckUrl());
+        }
+
+        @POST
+        public FormValidation doCheckClientId(@QueryParameter String clientId) {
+            if (StringUtils.isBlank(clientId)) {
+                return FormValidation.error(Messages.TuleapSecurityRealmDescriptor_CheckClientIdEmpty());
+            }
+
+            if (!clientId.matches("^(tlp-client-id-)\\d+$")) {
+                return FormValidation.error(Messages.TuleapSecurityRealmDescriptor_CheckClientIdFormat());
+            }
+            return FormValidation.ok();
         }
     }
 }
