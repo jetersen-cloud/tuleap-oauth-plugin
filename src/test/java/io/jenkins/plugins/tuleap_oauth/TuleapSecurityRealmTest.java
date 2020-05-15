@@ -27,6 +27,7 @@ public class TuleapSecurityRealmTest {
     private IDTokenChecker IDTokenChecker;
     private OkHttpClient httpClient;
     private TuleapAuthorizationCodeUrlBuilder authorizationCodeUrlBuilder;
+    private TuleapAccessTokenStorage tuleapAccessTokenStorage;
 
     private Jenkins jenkins;
 
@@ -39,6 +40,7 @@ public class TuleapSecurityRealmTest {
         this.IDTokenChecker = mock(IDTokenChecker.class);
         this.httpClient = mock(OkHttpClient.class);
         this.authorizationCodeUrlBuilder = mock(TuleapAuthorizationCodeUrlBuilder.class);
+        this.tuleapAccessTokenStorage = mock(TuleapAccessTokenStorage.class);
 
         this.jenkins = mock(Jenkins.class);
         when(pluginHelper.getJenkinsInstance()).thenReturn(jenkins);
@@ -52,6 +54,7 @@ public class TuleapSecurityRealmTest {
         securityRealm.setIDTokenChecker(this.IDTokenChecker);
         securityRealm.setHttpClient(this.httpClient);
         securityRealm.setAuthorizationCodeUrlBuilder(this.authorizationCodeUrlBuilder);
+        securityRealm.setTuleapAccessTokenStorage(this.tuleapAccessTokenStorage);
     }
 
     @Test

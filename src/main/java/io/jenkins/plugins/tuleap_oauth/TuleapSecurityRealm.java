@@ -6,6 +6,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.gson.Gson;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.Descriptor;
@@ -40,6 +41,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,6 +77,7 @@ public class TuleapSecurityRealm extends SecurityRealm {
     private IDTokenChecker IDTokenChecker;
     private UserInfoChecker userInfoChecker;
     private TuleapAuthorizationCodeUrlBuilder authorizationCodeUrlBuilder;
+    private TuleapAccessTokenStorage tuleapAccessTokenStorage;
 
     @DataBoundConstructor
     public TuleapSecurityRealm(String tuleapUri, String clientId, String clientSecret) {
@@ -116,6 +119,11 @@ public class TuleapSecurityRealm extends SecurityRealm {
     @Inject
     public void setAccessTokenChecker(AccessTokenChecker accessTokenChecker) {
         this.accessTokenChecker = accessTokenChecker;
+    }
+
+    @Inject
+    public void setTuleapAccessTokenStorage(TuleapAccessTokenStorage tuleapAccessTokenStorage) {
+        this.tuleapAccessTokenStorage = tuleapAccessTokenStorage;
     }
 
     @Inject
@@ -190,12 +198,14 @@ public class TuleapSecurityRealm extends SecurityRealm {
             this.accessTokenChecker == null ||
             this.gson == null ||
             this.IDTokenChecker == null ||
-            this.authorizationCodeUrlBuilder == null
+            this.authorizationCodeUrlBuilder == null ||
+            this.tuleapAccessTokenStorage == null
         ) {
             Guice.createInjector(new TuleapOAuth2GuiceModule()).injectMembers(this);
         }
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // see https://github.com/spotbugs/spotbugs/issues/651
     public HttpResponse doFinishLogin(StaplerRequest request, StaplerResponse response) throws IOException, JwkException, ServletException {
         if (!this.authorizationCodeChecker.checkAuthorizationCode(request)) {
             return HttpResponses.redirectTo(this.getJenkinsInstance().getRootUrl() + TuleapAuthenticationErrorAction.REDIRECT_ON_AUTHENTICATION_ERROR);
@@ -253,6 +263,11 @@ public class TuleapSecurityRealm extends SecurityRealm {
                 return HttpResponses.redirectTo(this.getJenkinsInstance().getRootUrl() + TuleapAuthenticationErrorAction.REDIRECT_ON_AUTHENTICATION_ERROR);
             }
         }
+
+        this.tuleapAccessTokenStorage.save(
+            Objects.requireNonNull(User.current()),
+            Secret.fromString(this.gson.toJson(accessTokenRepresentation))
+        );
 
         this.authenticateAsTuleapUser(request, userInfoRepresentation);
 
