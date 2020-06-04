@@ -264,12 +264,7 @@ public class TuleapSecurityRealm extends SecurityRealm {
             }
         }
 
-        this.tuleapAccessTokenStorage.save(
-            Objects.requireNonNull(User.current()),
-            Secret.fromString(this.gson.toJson(accessTokenRepresentation))
-        );
-
-        this.authenticateAsTuleapUser(request, userInfoRepresentation);
+        this.authenticateAsTuleapUser(request, userInfoRepresentation, accessTokenRepresentation);
 
         return HttpResponses.redirectToContextRoot();
     }
@@ -312,7 +307,7 @@ public class TuleapSecurityRealm extends SecurityRealm {
         return this.pluginHelper.getJenkinsInstance();
     }
 
-    private void authenticateAsTuleapUser(StaplerRequest request, UserInfoRepresentation userInfoRepresentation) {
+    private void authenticateAsTuleapUser(StaplerRequest request, UserInfoRepresentation userInfoRepresentation, AccessTokenRepresentation accessTokenRepresentation) {
         TuleapAuthenticationToken tuleapAuth = new TuleapAuthenticationToken(userInfoRepresentation);
 
         HttpSession session = request.getSession(false);
@@ -327,6 +322,11 @@ public class TuleapSecurityRealm extends SecurityRealm {
         if (tuleapUser == null) {
             throw new UsernameNotFoundException("User not found");
         }
+
+        this.tuleapAccessTokenStorage.save(
+            Objects.requireNonNull(tuleapUser),
+            Secret.fromString(this.gson.toJson(accessTokenRepresentation))
+        );
 
         tuleapUser.setFullName(userInfoRepresentation.getUsername());
         SecurityListener.fireAuthenticated(new TuleapUserDetails(
