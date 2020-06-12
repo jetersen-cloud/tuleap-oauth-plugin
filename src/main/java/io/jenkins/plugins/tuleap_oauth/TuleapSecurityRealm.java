@@ -12,6 +12,7 @@ import hudson.Util;
 import hudson.model.Descriptor;
 import hudson.model.User;
 import hudson.security.SecurityRealm;
+import hudson.security.UserMayOrMayNotExistException;
 import hudson.util.FormValidation;
 import hudson.util.Secret;
 import io.jenkins.plugins.tuleap_api.client.authentication.AccessToken;
@@ -22,6 +23,7 @@ import io.jenkins.plugins.tuleap_oauth.checks.AccessTokenChecker;
 import io.jenkins.plugins.tuleap_oauth.checks.AuthorizationCodeChecker;
 import io.jenkins.plugins.tuleap_oauth.checks.IDTokenChecker;
 import io.jenkins.plugins.tuleap_oauth.checks.UserInfoChecker;
+import io.jenkins.plugins.tuleap_oauth.entity.AccessTokenRepresentation;
 import io.jenkins.plugins.tuleap_oauth.guice.TuleapOAuth2GuiceModule;
 import io.jenkins.plugins.tuleap_oauth.helper.PluginHelper;
 import io.jenkins.plugins.tuleap_oauth.helper.TuleapAuthorizationCodeUrlBuilder;
@@ -31,6 +33,7 @@ import jenkins.security.SecurityListener;
 import okhttp3.*;
 import org.acegisecurity.*;
 import org.acegisecurity.context.SecurityContextHolder;
+import org.acegisecurity.userdetails.UserDetails;
 import org.acegisecurity.userdetails.UsernameNotFoundException;
 
 import org.apache.commons.lang.StringUtils;
@@ -172,6 +175,31 @@ public class TuleapSecurityRealm extends SecurityRealm {
     }
 
     @Override
+    public UserDetails loadUserByUsername(String username) {
+        Authentication authenticatedUserAcegiToken = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authenticatedUserAcegiToken == null) {
+            throw new UsernameNotFoundException("No access token found for user " + username);
+        }
+
+        if (!(authenticatedUserAcegiToken instanceof TuleapAuthenticationToken)) {
+            throw new UserMayOrMayNotExistException("Unknown token type for user " + username);
+        }
+
+        AccessTokenRepresentation accessToken = this.gson.fromJson(
+            this.tuleapAccessTokenStorage.retrieve(Objects.requireNonNull(User.getById(username, false))).getPlainText(),
+            AccessTokenRepresentation.class
+        );
+
+        UserInfo userInfo = this.openIDClientApi.getUserInfo(accessToken);
+
+        return new TuleapUserDetails(
+            userInfo.getUsername(),
+            authenticatedUserAcegiToken.getAuthorities()
+        );
+    }
+
+    @Override
     public SecurityComponents createSecurityComponents() {
         return new SecurityComponents(new AuthenticationManager() {
 
@@ -213,6 +241,7 @@ public class TuleapSecurityRealm extends SecurityRealm {
         return new HttpRedirect(authorizationCodeUri);
     }
 
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // see https://github.com/spotbugs/spotbugs/issues/651
     public HttpResponse doFinishLogin(StaplerRequest request, StaplerResponse response) throws IOException, JwkException, ServletException {
         if (!this.authorizationCodeChecker.checkAuthorizationCode(request)) {
             return HttpResponses.redirectTo(this.getJenkinsInstance().getRootUrl() + TuleapAuthenticationErrorAction.REDIRECT_ON_AUTHENTICATION_ERROR);
@@ -239,6 +268,11 @@ public class TuleapSecurityRealm extends SecurityRealm {
         }
 
         this.authenticateAsTuleapUser(request, userInfo, accessToken);
+
+        this.tuleapAccessTokenStorage.save(
+            Objects.requireNonNull(User.current()),
+            Secret.fromString(this.gson.toJson(AccessTokenRepresentation.buildFromAccessToken(accessToken)))
+        );
 
         return HttpResponses.redirectToContextRoot();
     }
