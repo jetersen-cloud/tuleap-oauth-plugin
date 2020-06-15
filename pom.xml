@@ -21,6 +21,14 @@
     <name>Tuleap Authentication Plugin</name>
     <description>A Jenkins authentication plugin that delegates the authentication to a Tuleap server</description>
 
+    <url>https://github.com/jenkinsci/tuleap-oauth-plugin</url>
+    <scm>
+        <connection>scm:git:ssh://github.com/jenkinsci/tuleap-oauth-plugin.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/jenkinsci/tuleap-oauth-plugin.git</developerConnection>
+        <url>https://github.com/jenkinsci/tuleap-oauth-plugin</url>
+        <tag>HEAD</tag>
+    </scm>
+
     <licenses>
         <license>
             <name>MIT License</name>
